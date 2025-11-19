@@ -12,7 +12,7 @@ This plugin depends on Essentia.
 
 You may need to build Essentia manually.
 
-Tested with: [new_essentia](https://github.com/wo80/essentia)
+Tested with: [essentia](https://github.com/wo80/essentia)
 
 ```bash
 git clone https://github.com/Callyth/ddb_analysis.git

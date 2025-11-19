@@ -562,6 +562,13 @@ void analysis_init_gui(ddb_gtkui_widget_t *s)
     gtk_box_pack_start(GTK_BOX(w->hbox2), w->key_label, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(w->hbox3), w->chord_label, FALSE, FALSE, 0);
 
+    gtk_label_set_line_wrap(GTK_LABEL(w->bpm_label), TRUE);
+    gtk_label_set_line_wrap_mode(GTK_LABEL(w->bpm_label), PANGO_WRAP_WORD_CHAR);
+    gtk_label_set_line_wrap(GTK_LABEL(w->key_label), TRUE);
+    gtk_label_set_line_wrap_mode(GTK_LABEL(w->key_label), PANGO_WRAP_WORD_CHAR);
+    gtk_label_set_line_wrap(GTK_LABEL(w->chord_label), TRUE);
+    gtk_label_set_line_wrap_mode(GTK_LABEL(w->chord_label), PANGO_WRAP_WORD_CHAR);
+
     gtk_widget_set_halign(w->hbox1, GTK_ALIGN_CENTER);
     gtk_widget_set_halign(w->hbox2, GTK_ALIGN_CENTER);
     gtk_widget_set_halign(w->hbox3, GTK_ALIGN_CENTER);
