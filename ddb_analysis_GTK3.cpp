@@ -35,7 +35,6 @@ using namespace std;
 static DB_functions_t *deadbeef = NULL;
 static DB_misc_t plugin;
 static ddb_gtkui_t *gtkui_plugin = NULL;
-static const char *last_uri = NULL;
 
 struct plugin_config_t
 {
@@ -120,7 +119,10 @@ typedef struct
     GtkWidget *hbox3;
     GtkWidget *popup;
     GtkWidget *popup_item;
+    GtkWidget *popup_item2;
     GtkWidget *visualizer;
+    const char *uri = NULL;
+    const char *last_uri = NULL;
     string bpm_text;
     string key_text;
     string chord_text;
@@ -432,12 +434,12 @@ gboolean analysis_update_display(gpointer user_data)
 
                 if (w->is_multifeature_mode)
                 {
-                    w->bpm_text = "BPM: " + to_string(w->bpm) + " (confidence: " + to_string(w->bpm_confidence) + ") current: " + to_string(bpm_current) + ")";
+                    w->bpm_text = "BPM: " + to_string(w->bpm) + " \n(confidence: " + to_string(w->bpm_confidence) + ") \ncurrent: " + to_string(bpm_current) + ")";
                 }
                 else
                 {
 
-                    w->bpm_text = "BPM: " + to_string(w->bpm) + " current: " + to_string(bpm_current);
+                    w->bpm_text = "BPM: " + to_string(w->bpm) + " \ncurrent: " + to_string(bpm_current);
                 }
             }
             else
@@ -461,7 +463,7 @@ gboolean analysis_update_display(gpointer user_data)
             if (w->key_success)
             {
 
-                w->key_text = "Key: " + w->key + " " + w->scale + " (strength: " + to_string(w->key_strength) + ")";
+                w->key_text = "Key: " + w->key + " " + w->scale + " \n(strength: " + to_string(w->key_strength) + ")";
             }
             else
             {
@@ -485,7 +487,7 @@ gboolean analysis_update_display(gpointer user_data)
             {
                 if (w->is_follow_the_rhythm)
                 {
-                    w->chord_text = "Chord: " + w->chords[w->bpm_tick_index] + " (strength: " + to_string(w->chords_strength[w->bpm_tick_index]) + ")";
+                    w->chord_text = "Chord: " + w->chords[w->bpm_tick_index] + " \n(strength: " + to_string(w->chords_strength[w->bpm_tick_index]) + ")";
                 }
                 else
                 {
@@ -495,9 +497,8 @@ gboolean analysis_update_display(gpointer user_data)
                     if (n >= w->chords.size())
                     {
                         n = w->chords.size() - 1;
-                        deadbeef->log("out of range");
                     }
-                    w->chord_text = "Chord: " + w->chords[n] + " (strength: " + to_string(w->chords_strength[n]) + ")";
+                    w->chord_text = "Chord: " + w->chords[n] + " \n(strength: " + to_string(w->chords_strength[n]) + ")";
                 }
             }
             else
@@ -531,69 +532,6 @@ gboolean draw_circle(GtkWidget *widget, cairo_t *cr, gpointer data)
     cairo_fill(cr);
 
     return FALSE;
-}
-
-void analysis_init_gui(ddb_gtkui_widget_t *s)
-{
-
-    w->bpm_text = "BPM: ...";
-    w->key_text = "Key: ...";
-    w->chord_text = "Chord: ...";
-
-    w->bpm_label = gtk_label_new(w->bpm_text.c_str());
-    w->key_label = gtk_label_new(w->key_text.c_str());
-    w->chord_label = gtk_label_new(w->chord_text.c_str());
-    w->visualizer = gtk_drawing_area_new();
-    gtk_widget_set_size_request(w->visualizer, 30, 30);
-
-    w->popup = gtk_menu_new();
-    w->popup_item = gtk_menu_item_new_with_mnemonic("Configure");
-
-    w->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    w->hbox1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    w->hbox2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    w->hbox3 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-    gtk_box_pack_start(GTK_BOX(w->vbox), w->hbox1, FALSE, FALSE, 8);
-    gtk_box_pack_start(GTK_BOX(w->vbox), w->hbox2, FALSE, FALSE, 8);
-    gtk_box_pack_start(GTK_BOX(w->vbox), w->hbox3, FALSE, FALSE, 8);
-
-    gtk_box_pack_start(GTK_BOX(w->hbox1), w->visualizer, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(w->hbox1), w->bpm_label, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(w->hbox2), w->key_label, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(w->hbox3), w->chord_label, FALSE, FALSE, 0);
-
-    gtk_label_set_line_wrap(GTK_LABEL(w->bpm_label), TRUE);
-    gtk_label_set_line_wrap_mode(GTK_LABEL(w->bpm_label), PANGO_WRAP_WORD_CHAR);
-    gtk_label_set_line_wrap(GTK_LABEL(w->key_label), TRUE);
-    gtk_label_set_line_wrap_mode(GTK_LABEL(w->key_label), PANGO_WRAP_WORD_CHAR);
-    gtk_label_set_line_wrap(GTK_LABEL(w->chord_label), TRUE);
-    gtk_label_set_line_wrap_mode(GTK_LABEL(w->chord_label), PANGO_WRAP_WORD_CHAR);
-
-    gtk_widget_set_halign(w->hbox1, GTK_ALIGN_CENTER);
-    gtk_widget_set_halign(w->hbox2, GTK_ALIGN_CENTER);
-    gtk_widget_set_halign(w->hbox3, GTK_ALIGN_CENTER);
-
-    gtk_container_add(GTK_CONTAINER(w->base.widget), w->vbox);
-
-    gtk_menu_shell_append(GTK_MENU_SHELL(w->popup), w->popup_item);
-    gtk_widget_show(w->popup_item);
-    gtk_widget_show_all(w->base.widget);
-
-    gtk_widget_add_events(w->base.widget, GDK_BUTTON_PRESS_MASK);
-    g_signal_connect(w->base.widget, "button-press-event", G_CALLBACK(analysis_button_press), w);
-    g_signal_connect_after(GTK_WIDGET(w->popup_item), "activate", G_CALLBACK(analysis_config), w);
-    g_signal_connect(w->visualizer, "draw", G_CALLBACK(draw_circle), w);
-
-    g_timeout_add((1.0f / config.update_fps) * 1000, analysis_update_display, w);
-}
-
-void w_analysis_init(ddb_gtkui_widget_t *s)
-{
-    analysis_init_gui(s);
-}
-
-void w_analysis_destroy(ddb_gtkui_widget_t *w)
-{
 }
 
 void chords_analysis_worker(const char *path, vector<float> ticks, plugin_config_t config, function<void(chordsResult)> callback)
@@ -861,7 +799,7 @@ void bpm_analysis_worker(const char *path, plugin_config_t config, function<void
 
 void chords_callback(chordsResult r)
 {
-    if (strcmp(r.uri, last_uri) == 0)
+    if (strcmp(r.uri, w->last_uri) == 0)
     {
         if (r.success == true)
         {
@@ -885,7 +823,7 @@ void chords_callback(chordsResult r)
 
 void bpm_callback(bpmResult r)
 {
-    if (strcmp(r.uri, last_uri) == 0)
+    if (strcmp(r.uri, w->last_uri) == 0)
     {
         if (r.success == true)
         {
@@ -928,7 +866,7 @@ void bpm_callback(bpmResult r)
 
 void key_callback(keyResult r)
 {
-    if (strcmp(r.uri, last_uri) == 0)
+    if (strcmp(r.uri, w->last_uri) == 0)
     {
         if (r.success == true)
         {
@@ -949,67 +887,147 @@ void key_callback(keyResult r)
     }
 }
 
+static void calculating_music()
+{
+    lock_guard<mutex> chordlock(w->chordMutex);
+    lock_guard<mutex> keylock(w->keyMutex);
+    w->chord_finish = false;
+    w->bpm_finish = false;
+    w->key_finish = false;
+    w->chord_success = false;
+    w->bpm_success = false;
+    w->key_success = false;
+    w->last_uri = w->uri;
+
+    if (config.bpm_enable)
+    {
+        w->bpm_text = "BPM: Calculating...";
+        thread bpm_worker(bpm_analysis_worker, w->uri, config, bpm_callback);
+        bpm_worker.detach();
+    }
+    else
+    {
+        w->bpm_text = "BPM: ...";
+    }
+    if (config.key_enable)
+    {
+        w->key_text = "Key: Calculating...";
+        thread key_worker(key_analysis_worker, w->uri, key_callback);
+        key_worker.detach();
+    }
+    else
+    {
+        w->key_text = "Key: ...";
+    }
+    if (config.chords_enable && !config.chords_follow_the_rhythm)
+    {
+        w->chord_text = "Chord: Calculating...";
+        vector<float> ticks;
+        ticks.clear();
+        thread chords_worker(chords_analysis_worker, w->uri, ticks, config, chords_callback);
+        chords_worker.detach();
+    }
+    else if (config.chords_enable)
+    {
+        w->chord_text = "Chord: Waiting...";
+    }
+    else
+    {
+        w->chord_text = "Chord: ...";
+    }
+    g_idle_add(update_label, w);
+}
+
+void analysis_init_gui(ddb_gtkui_widget_t *s)
+{
+    GtkStyleContext *ctx = gtk_widget_get_style_context(w->base.widget);
+    gtk_style_context_add_class(ctx, "panel");
+
+    gtk_style_context_add_class(
+        gtk_widget_get_style_context(w->base.widget),
+        "background");
+
+    w->bpm_text = "BPM: ...";
+    w->key_text = "Key: ...";
+    w->chord_text = "Chord: ...";
+
+    w->bpm_label = gtk_label_new(w->bpm_text.c_str());
+    w->key_label = gtk_label_new(w->key_text.c_str());
+    w->chord_label = gtk_label_new(w->chord_text.c_str());
+    w->visualizer = gtk_drawing_area_new();
+    gtk_widget_set_size_request(w->visualizer, 30, 30);
+
+    w->popup = gtk_menu_new();
+    w->popup_item = gtk_menu_item_new_with_mnemonic("Configure");
+    w->popup_item2 = gtk_menu_item_new_with_mnemonic("Recalculate");
+
+    w->vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    w->hbox1 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    w->hbox2 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    w->hbox3 = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_box_pack_start(GTK_BOX(w->vbox), w->hbox1, FALSE, FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(w->vbox), w->hbox2, FALSE, FALSE, 5);
+    gtk_box_pack_start(GTK_BOX(w->vbox), w->hbox3, FALSE, FALSE, 5);
+
+    gtk_box_pack_start(GTK_BOX(w->hbox1), w->visualizer, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(w->hbox1), w->bpm_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(w->hbox2), w->key_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(w->hbox3), w->chord_label, FALSE, FALSE, 0);
+
+    gtk_widget_set_valign(w->vbox, GTK_ALIGN_CENTER);
+    gtk_widget_set_halign(w->vbox, GTK_ALIGN_CENTER);
+    gtk_label_set_line_wrap(GTK_LABEL(w->bpm_label), TRUE);
+    gtk_label_set_line_wrap_mode(GTK_LABEL(w->bpm_label), PANGO_WRAP_WORD_CHAR);
+    gtk_label_set_line_wrap(GTK_LABEL(w->key_label), TRUE);
+    gtk_label_set_line_wrap_mode(GTK_LABEL(w->key_label), PANGO_WRAP_WORD_CHAR);
+    gtk_label_set_line_wrap(GTK_LABEL(w->chord_label), TRUE);
+    gtk_label_set_line_wrap_mode(GTK_LABEL(w->chord_label), PANGO_WRAP_WORD_CHAR);
+
+    gtk_widget_set_halign(w->hbox1, GTK_ALIGN_CENTER);
+    gtk_widget_set_halign(w->hbox2, GTK_ALIGN_CENTER);
+    gtk_widget_set_halign(w->hbox3, GTK_ALIGN_CENTER);
+
+    gtk_container_add(GTK_CONTAINER(w->base.widget), w->vbox);
+
+    gtk_menu_shell_append(GTK_MENU_SHELL(w->popup), w->popup_item);
+    gtk_widget_show(w->popup_item);
+    gtk_menu_shell_append(GTK_MENU_SHELL(w->popup), w->popup_item2);
+    gtk_widget_show(w->popup_item2);
+    gtk_widget_show_all(w->base.widget);
+
+    gtk_widget_add_events(w->base.widget, GDK_BUTTON_PRESS_MASK);
+    g_signal_connect(w->base.widget, "button-press-event", G_CALLBACK(analysis_button_press), w);
+    g_signal_connect_after(GTK_WIDGET(w->popup_item), "activate", G_CALLBACK(analysis_config), w);
+    g_signal_connect_after(GTK_WIDGET(w->popup_item2), "activate", G_CALLBACK(calculating_music), w);
+    g_signal_connect(w->visualizer, "draw", G_CALLBACK(draw_circle), w);
+
+    g_timeout_add((1.0f / config.update_fps) * 1000, analysis_update_display, w);
+}
+
+void w_analysis_init(ddb_gtkui_widget_t *s)
+{
+    analysis_init_gui(s);
+}
+
+void w_analysis_destroy(ddb_gtkui_widget_t *w)
+{
+}
+
 static void check_url_update()
 {
     ddb_playItem_t *track = deadbeef->streamer_get_playing_track();
 
     if (track)
     {
-        const char *uri = deadbeef->pl_find_meta(track, ":URI");
-        if (uri)
+        w->uri = deadbeef->pl_find_meta(track, ":URI");
+        if (w->uri)
         {
             lock_guard<mutex> bpmlock(w->bpmMutex);
             w->bpm_tick_index = 0;
             w->circle_brightness = 1.0f;
-            if (!last_uri || strcmp(uri, last_uri) != 0)
+            if (!w->last_uri || strcmp(w->uri, w->last_uri) != 0)
             {
-                lock_guard<mutex> chordlock(w->chordMutex);
-                lock_guard<mutex> keylock(w->keyMutex);
-                w->chord_finish = false;
-                w->bpm_finish = false;
-                w->key_finish = false;
-                w->chord_success = false;
-                w->bpm_success = false;
-                w->key_success = false;
-                last_uri = uri;
-
-                if (config.bpm_enable)
-                {
-                    w->bpm_text = "BPM: Calculating...";
-                    thread bpm_worker(bpm_analysis_worker, uri, config, bpm_callback);
-                    bpm_worker.detach();
-                }
-                else
-                {
-                    w->bpm_text = "BPM: ...";
-                }
-                if (config.key_enable)
-                {
-                    w->key_text = "Key: Calculating...";
-                    thread key_worker(key_analysis_worker, uri, key_callback);
-                    key_worker.detach();
-                }
-                else
-                {
-                    w->key_text = "Key: ...";
-                }
-                if (config.chords_enable && !config.chords_follow_the_rhythm)
-                {
-                    w->chord_text = "Chord: Calculating...";
-                    vector<float> ticks;
-                    ticks.clear();
-                    thread chords_worker(chords_analysis_worker, uri, ticks, config, chords_callback);
-                    chords_worker.detach();
-                }
-                else if (config.chords_enable)
-                {
-                    w->chord_text = "Chord: Waiting...";
-                }
-                else
-                {
-                    w->chord_text = "Chord: ...";
-                }
-                g_idle_add(update_label, w);
+                calculating_music();
             }
         }
     }
@@ -1060,7 +1078,7 @@ void get_config()
     config.chords_hop_size = deadbeef->conf_get_int("analysis.chords_hop_size", 1024);
     config.bpm_averaging = deadbeef->conf_get_int("bpm_averaging", 15);
     config.circle_attenuration_speed = deadbeef->conf_get_float("analysis.circle_attenuration_speed", 0.75);
-    config.ChordsDetection_windowSize = deadbeef->conf_get_float("analysis.ChordsDetection_windowSize", 2);
+    config.ChordsDetection_windowSize = deadbeef->conf_get_float("analysis.ChordsDetection_windowSize", 1.8);
     config.chords_follow_the_rhythm = (bool)deadbeef->conf_get_int("analysis.chords_follow_the_rhythm", 0);
     config.chords_enable = (bool)deadbeef->conf_get_int("analysis.chords_enable", 1);
     config.key_enable = (bool)deadbeef->conf_get_int("analysis.key_enable", 1);
